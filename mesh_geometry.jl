@@ -37,10 +37,10 @@ function generate_2Dmesh(L,H,n,sx=1,sy=1)
     y_array = range(0,H,n)
     for i = 1:n 
         for j = 1:n 
-            points[i,j] = [x_array[i]*sx, y_array[j]*sy ,0]
+            points[i,j] = [x_array[i]*sx, y_array[j]*sy ,0,0,0]
         end
     end
-    # now the points array consists of CV grids with initial temp
+    # now the points array consists of CV grids with initial temp u and v
     # assigned to be  0 
 
     # STEP 2 ##### 
@@ -58,7 +58,7 @@ function generate_2Dmesh(L,H,n,sx=1,sy=1)
         delta_y = final_y - init_y
 
         nodes[i,j] = [points[i,j][1] + delta_x/2 , points[i,j][2] +
-            delta_y/2 , 0]
+            delta_y/2 , 0,0,0]
     end
     # <<<
     return[points,nodes]
@@ -90,7 +90,7 @@ function generate_2Dmesh_from_dat(xc_file="xc.dat", yc_file="yc.dat")
     points = Array{Array{Float64}}(undef, n, n)
     for i = 1:n 
         for j = 1:n 
-            points[i,j] = [x_array[i], y_array[j], 0]
+            points[i,j] = [x_array[i], y_array[j], 0,0,0]
         end
     end
     
@@ -103,7 +103,8 @@ function generate_2Dmesh_from_dat(xc_file="xc.dat", yc_file="yc.dat")
         final_y = points[i,j+1][2]
         delta_x = final_x - init_x
         delta_y = final_y - init_y
-        nodes[i,j] = [points[i,j][1] + delta_x/2, points[i,j][2] + delta_y/2, 0]
+        nodes[i,j] = [points[i,j][1] + delta_x/2,
+                      points[i,j][2] + delta_y/2, 0,0,0]
     end
     
     return [points, nodes]

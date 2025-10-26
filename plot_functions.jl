@@ -28,11 +28,11 @@ function plot_mesh(nodes)
     display(s)
 end
 
-function contour_plot(data)
-    """
-    TODO  
+"""
+TODO  
 
-    """
+"""
+function plot_temp(data)
 
     # Get unique coordinates
     x_vals = sort(unique([p[1] for p in data]))
@@ -83,4 +83,22 @@ function plot_convergence(loops_array, tolerance_array)
     # annotation
     hline!([tolerance_array[7]], linestyle=:dash, color=:green, label="Target")
     vline!([loops_array[7]], linestyle=:dash, color=:green, label="Target")
+end
+
+function plot_velocity(nodes)
+    
+    # Extract x, y, u, v from nodes
+    n_i, n_j = size(nodes)
+    xp = [nodes[i,j][1] for i in 1:n_i, j in 1:n_j]
+    yp = [nodes[i,j][2] for i in 1:n_i, j in 1:n_j]
+    u = [nodes[i,j][4] for i in 1:n_i, j in 1:n_j]
+    v = [nodes[i,j][5] for i in 1:n_i, j in 1:n_j]
+    
+    # Plot velocity field
+    vec = 5
+    q = quiver(xp, yp, quiver=(u', v', vec), 
+           aspect_ratio=:equal, 
+           xlabel="x", ylabel="y",
+           legend=false)
+    display(q)
 end
