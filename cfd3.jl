@@ -1,4 +1,3 @@
-
 using DelimitedFiles
 include("plot_functions.jl")
 include("mesh_geometry.jl")
@@ -78,7 +77,7 @@ BoundaryW = nodes[1   ,   :]
 
 # identify inlets and  outlets nodes 
 IOlength = 0.068 * H 
-IOnodes = 5  # approx
+IOnodes = 11  # approx
 
 
 # confirm the plot 
@@ -89,19 +88,22 @@ for i = 1:length(BoundaryW)
     #fix BoundaryW temp value to 50
     if i <= IOnodes # outlet B
         BoundaryW[i][4] = 0 # conditions
+        BoundaryW[i][3] = 20  # conditons 
 
     elseif i >= size(BoundaryW)[1]-IOnodes # outlet A 
         BoundaryW[i][4] = 1  # conditons 
+        BoundaryW[i][3] = 20  # conditons 
     end
-    BoundaryW[i][3] = 50
 end
 
 # boundaryE
 for i = 1:length(BoundaryE)
     if i <= IOnodes #  outlets C
         BoundaryE[i][4] = 1  # conditons 
+        BoundaryE[i][3] = 50 
+    else
+        BoundaryE[i][3] = 50 
     end
-    BoundaryE[i][3] = 50 
 end
 
 #boundaryN 
@@ -118,11 +120,11 @@ for i = 1:length(BoundaryN)
     end
 end
 
-# BoundaryS
-# for i = 1:length(BoundaryS)
-#     #fix BoundaryS temp value to 50
-#     BoundaryS[i][3] = 10
-# end
+BoundaryS
+for i = 1:length(BoundaryS)
+    #fix BoundaryS temp value to 50
+    BoundaryS[i][3] = 50
+end
 
 # contour_plot(nodes)
 ############################################################
@@ -140,7 +142,7 @@ function gen_coeff_array(nodes)
             # parameters
 
             if i == 1 || j == 1 || i == n-1 || j == n-1 
-                coeff_array[i,j] = [10 1 11 1 1]
+                coeff_array[i,j] = [0 0 0 0 0]
             else
                 P_node = nodes[i,j] # current node
                 W_node = nodes[i-1 , j  ] # Adjacent nodes
@@ -255,8 +257,6 @@ function TDMA!(nodes)
             nodes[i, j][3] = T[j-1]
         end
     end
-    
-    return nodes
 end
 
 
