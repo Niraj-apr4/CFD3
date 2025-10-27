@@ -7,6 +7,7 @@ include("mesh_geometry.jl")
 rho = 1
 k = 1
 gamma = 1/50
+H = 2
 
 
 # STEP 1 create mesh ######################### 
@@ -75,22 +76,53 @@ BoundaryE = nodes[n-1 ,   :]
 BoundaryN = nodes[:   , n-1]
 BoundaryW = nodes[1   ,   :]
 
+# identify inlets and  outlets nodes 
+IOlength = 0.068 * H 
+IOnodes = 5  # approx
+
+
 # confirm the plot 
 # contour_plot(nodes)
 
-# boundaryE
-for i = 1:length(BoundaryE)
-    #fix BoundaryE temp value to 50
-    BoundaryE[i][3] = 50 
-end
+# BoundaryW 
 for i = 1:length(BoundaryW)
     #fix BoundaryW temp value to 50
+    if i <= IOnodes # outlet B
+        BoundaryW[i][4] = 0 # conditions
+
+    elseif i >= size(BoundaryW)[1]-IOnodes # outlet A 
+        BoundaryW[i][4] = 1  # conditons 
+    end
     BoundaryW[i][3] = 50
 end
-for i = 1:length(BoundaryS)
-    #fix BoundaryS temp value to 50
-    BoundaryS[i][3] = 10
+
+# boundaryE
+for i = 1:length(BoundaryE)
+    if i <= IOnodes #  outlets C
+        BoundaryE[i][4] = 1  # conditons 
+    end
+    BoundaryE[i][3] = 50 
 end
+
+#boundaryN 
+for i = 1:length(BoundaryN)
+    mid = length(BoundaryN)/2
+    mid = Int64(round(Int , mid))
+
+    IOmid = IOnodes/2
+    IOmid = Int64(round(Int , IOmid))
+    # @show IOmid
+    if i >= mid - IOmid && i <= mid + IOmid 
+        # @show i
+        BoundaryN[i][5] = 0 
+    end
+end
+
+# BoundaryS
+# for i = 1:length(BoundaryS)
+#     #fix BoundaryS temp value to 50
+#     BoundaryS[i][3] = 10
+# end
 
 # contour_plot(nodes)
 ############################################################
