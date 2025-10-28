@@ -11,20 +11,12 @@ H = 2
 
 # STEP 1 create mesh ######################### 
 
-# earlier logic of creating generating mesh  >>
-# n = 30 
-# L = 1 
-# H = 0.5
-# sx = 1
-# sy = 1 
-
-# mesh2 = generate_2Dmesh(L,H,n,sx,sy)
-# nodes = mesh2[2]
-# points = mesh2[1]
-# <<
-
+# import mesh 
 nodes  = nodes_given
 points = points_given
+
+n = size(points)[1]
+coeff_array = Array{Array{Float64}}(undef,n-1,n-1)
 ################################################
 
 # STEP 2 add velocity field ###################
@@ -65,9 +57,7 @@ add_velocity_to_nodes!(nodes, "u.dat", "v.dat")
 ###########################################################
 
 # STEP 3 Add boundary conditon ############################
-
 # TODO check if there will be points or nodes
-n = size(points)[1]
 
 # identify the boundary 
 BoundaryS = nodes[:   ,   1] 
@@ -77,7 +67,7 @@ BoundaryW = nodes[1   ,   :]
 
 # identify inlets and  outlets nodes 
 IOlength = 0.068 * H 
-IOnodes = 11  # approx
+IOnodes = 5  # approx
 
 
 # confirm the plot 
@@ -88,11 +78,13 @@ for i = 1:length(BoundaryW)
     #fix BoundaryW temp value to 50
     if i <= IOnodes # outlet B
         BoundaryW[i][4] = 0 # conditions
-        BoundaryW[i][3] = 20  # conditons 
+
+        # apply Newmann Tp = Te 
+        coeff_array[1,i] = [ 0 1 0 0 1]
 
     elseif i >= size(BoundaryW)[1]-IOnodes # outlet A 
         BoundaryW[i][4] = 1  # conditons 
-        BoundaryW[i][3] = 20  # conditons 
+        BoundaryW[i][3] = 20  # TA = 20 (Dirichlet)
     end
 end
 
@@ -100,8 +92,9 @@ end
 for i = 1:length(BoundaryE)
     if i <= IOnodes #  outlets C
         BoundaryE[i][4] = 1  # conditons 
-        BoundaryE[i][3] = 50 
-    else
+        # apply newman Tp = Tw
+        coeff_array[n-1,i] = [ 1 0 0 0 1]
+    else # other than outlet
         BoundaryE[i][3] = 50 
     end
 end
@@ -118,12 +111,13 @@ for i = 1:length(BoundaryN)
         # @show i
         BoundaryN[i][5] = 0 
     end
+    #apply newmann Tp = Ts
+    coeff_array[i, n-1] = [0 0 1 0 1]
 end
 
-BoundaryS
+#BoundaryS
 for i = 1:length(BoundaryS)
-    #fix BoundaryS temp value to 50
-    BoundaryS[i][3] = 50
+    coeff_array[i, 1] = [0 0 0 1 1]
 end
 
 # contour_plot(nodes)
@@ -131,76 +125,71 @@ end
 
 # {{{
 # coeff_array size same as node array 
-function gen_coeff_array(nodes)
-    coeff_array = Array{Array{Float64}}(undef,n-1,n-1)
-    for i=1:n-1 # iteration along rows
-        for j = 1:n-1 # iteration along columns
+function coeff_array_internal!(nodes)
+    # global parameters
+    global coeff_array
+    for i=2:n-2 # iteration along rows
+        for j = 2:n-2 # iteration along columns
 
             global rho # global parameters
-
             # TODO change the boundary conditons
             # parameters
+            P_node = nodes[i,j] # current node
+            W_node = nodes[i-1 , j  ] # Adjacent nodes
+            S_node = nodes[i   , j-1]
+            E_node = nodes[i+1 , j  ]
+            N_node = nodes[i   , j+1]
 
-            if i == 1 || j == 1 || i == n-1 || j == n-1 
-                coeff_array[i,j] = [0 0 0 0 0]
-            else
-                P_node = nodes[i,j] # current node
-                W_node = nodes[i-1 , j  ] # Adjacent nodes
-                S_node = nodes[i   , j-1]
-                E_node = nodes[i+1 , j  ]
-                N_node = nodes[i   , j+1]
+            # node geometry
+            delta_xWP = P_node[1] - W_node[1]
+            delta_xPE = E_node[1] - P_node[1]  
+            delta_ySP = P_node[2] - S_node[2]
+            delta_yPN = N_node[2] - P_node[2]
 
-                # node geometry
-                delta_xWP = P_node[1] - W_node[1]
-                delta_xPE = E_node[1] - P_node[1]  
-                delta_ySP = P_node[2] - S_node[2]
-                delta_yPN = N_node[2] - P_node[2]
+            # TODO Please confirm if this is correct 
+            delta_x = delta_xWP/2 + delta_xPE/2
+            delta_y = delta_ySP/2 + delta_yPN/2
 
-                # TODO Please confirm if this is correct 
-                delta_x = delta_xWP/2 + delta_xPE/2
-                delta_y = delta_ySP/2 + delta_yPN/2
+            Aw = delta_y # face areas in 2D case
+            Ae = delta_y
+            An = delta_x
+            As = delta_x
 
-                Aw = delta_y # face areas in 2D case
-                Ae = delta_y
-                An = delta_x
-                As = delta_x
+            # Fw = rho * W_node[4] * Aw
+            # Fe = rho * E_node[4] * Ae
+            # Fs = rho * S_node[5] * As
+            # Fn = rho * N_node[5] * An
 
-                # Fw = rho * W_node[4] * Aw
-                # Fe = rho * E_node[4] * Ae
-                # Fs = rho * S_node[5] * As
-                # Fn = rho * N_node[5] * An
+            #           OR
 
-                #           OR
-
-                # todo check which implementation is correct
-                Fw = rho * (W_node[4] + P_node[4]) / 2 * Aw
-                Fe = rho * (E_node[4] + P_node[4]) / 2 * Aw
-                Fs = rho * (S_node[5] + P_node[5]) / 2 * Aw
-                Fn = rho * (N_node[5] + P_node[5]) / 2 * Aw
+            # todo check which implementation is correct
+            Fw = rho * (W_node[4] + P_node[4]) / 2 * Aw
+            Fe = rho * (E_node[4] + P_node[4]) / 2 * Aw
+            Fs = rho * (S_node[5] + P_node[5]) / 2 * Aw
+            Fn = rho * (N_node[5] + P_node[5]) / 2 * Aw
 
 
-                delF = Fe - Fw + Fn - Fs
+            delF = Fe - Fw + Fn - Fs
 
-                Dw = gamma / delta_xWP * Aw
-                De = gamma / delta_xPE * Ae
-                Ds = gamma / delta_ySP * As
-                Dn = gamma / delta_yPN * An
+            Dw = gamma / delta_xWP * Aw
+            De = gamma / delta_xPE * Ae
+            Ds = gamma / delta_ySP * As
+            Dn = gamma / delta_yPN * An
 
-                aW = max( Fw, (Dw + Fw/2),0) 
-                aE = max(-Fe, (De - Fe/2),0) 
-                aS = max( Fs, (Ds + Fs/2),0) 
-                aN = max(-Fn, (Dn - Fn/2),0) 
-                aP = aW + aE+ aS + aN + delF
+            aW = max( Fw, (Dw + Fw/2),0) 
+            aE = max(-Fe, (De - Fe/2),0) 
+            aS = max( Fs, (Ds + Fs/2),0) 
+            aN = max(-Fn, (Dn - Fn/2),0) 
+            aP = aW + aE+ aS + aN + delF
 
-                coeff_array[i,j] = [aW aE aS aN aP]
-            end
+            coeff_array[i,j] = [aW aE aS aN aP]
         end
     end
-    return coeff_array
+    coeff_array
 end
 # }}}
 
-coeff_array = gen_coeff_array(nodes)
+coeff_array = coeff_array_internal!(nodes)
 
 # TODO review needed 
 function TDMA!(nodes)
@@ -290,33 +279,3 @@ end
 # for i=1:10
 #     TDMA!(nodes, coeff_array)
 # end
-
-
-
-
-# for i = 2:n-2 , j = 2:n-2
-#     # global parameters
-#     global tolerance 
-
-#     aW = coeff_array[i,j][1]
-#     aE = coeff_array[i,j][2]
-#     aS = coeff_array[i,j][3]
-#     aN = coeff_array[i,j][4]
-#     aP = coeff_array[i,j][5]
-    
-#     TP = nodes[i,j][3]
-#     TW = nodes[i-1 , j  ][3]
-#     TS = nodes[i   , j-1][3]
-#     TE = nodes[i+1 , j  ][3]
-#     TN = nodes[i   , j+1][3]
-#     # TODO please change 
-
-#     global epsilon = aE* TE + aW * TW + aN * TN + aS * TS - aP * TP
-#     @show epsilon 
-#     while epsilon > tolerance
-#         TDMA!(nodes, coeff_array)
-#     end
-# end
-
-# TDMA!(nodes, coeff_array)
-# contour_plot(nodes)
