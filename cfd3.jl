@@ -406,6 +406,7 @@ function error_test(nodes)
     global coeff_array
     # only implemented for internal nodes
     # for simplicity
+    error = 0 # carefull with this   
     for i = 2:n-2 ,j = 2:n-2
         aW = coeff_array[i,j][1] 
         aE = coeff_array[i,j][2] 
@@ -417,8 +418,24 @@ function error_test(nodes)
         TS = nodes[i, j-1][3]
         TE = nodes[i+1, j][3]
         TN = nodes[i, j+1][3]
+        TP = nodes[i, j][3]
 
-        error = aW * TW + aS * TS + aE * TE + aN * TN - aP * TP
-        @show error
+        # TODO update the error function 
+        # TODO please ensure if the error calculation is correct
+        error += aW * TW + aS * TS+aE * TE + aN * TN - aP * TP
     end
+    return error
+end
+
+# convergence test 
+counter = 0
+while true
+    global counter
+    println("error values : " , error_test(nodes))
+    if error_test(nodes) < 0.001
+        break
+    end
+    TDMA!(nodes)
+    counter += 1
+    @show counter 
 end
