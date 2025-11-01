@@ -81,7 +81,7 @@ for i = 1:length(BoundaryW)
 
     elseif i >= size(BoundaryW)[1]-IOnodes # outlet A 
         BoundaryW[i][4] = 1  #  UA = 1
-        BoundaryW[i][3] = 20  # TA = 20 (Dirichlet)
+        BoundaryW[i][3] = 50  # TA = 20 (Dirichlet)
     end
 end
 
@@ -90,7 +90,7 @@ for i = 1:length(BoundaryE)
     if i <= IOnodes #  outlets C
         BoundaryE[i][4] = 1  # UC = 1
     else # other than outlet
-        BoundaryE[i][3] = 50 
+        BoundaryE[i][3] = 20 # changed for illustration 
     end
 end
 
@@ -109,7 +109,7 @@ for i = 1:length(BoundaryN)
     # BoundaryN[i][3] = 50
 end
 
-#BoundaryS
+# # BoundaryS
 # for i = 1:length(BoundaryS)
 #     BoundaryS[i][3] = 50
 # end
@@ -131,8 +131,9 @@ function coeff_array!(nodes)
             aE = 0.0
             aS = 0.0
             aN = 0.0
-            Su = 0.0
-            Sp = 0.0
+
+            Su=0.0
+            Sp=0.0
             
             # Check if we're at a boundary that would cause out of bounds
             if i == 1 || i == n-1 || j == 1 || j == n-1
@@ -180,6 +181,7 @@ function coeff_array!(nodes)
                 As = max(delta_x, 1e-10)
                 
                 # Mass flow rates
+                # some work around if  adjacent not available set to  0
                 Fw = (i > 1) ? rho * (W_node[4] + P_node[4]) / 2 * Aw : 0.0
                 Fe = (i < n-1) ? rho * (E_node[4] + P_node[4]) / 2 * Ae : 0.0
                 Fs = (j > 1) ? rho * (S_node[5] + P_node[5]) / 2 * As : 0.0
@@ -192,7 +194,6 @@ function coeff_array!(nodes)
                 Dn = (j < n-1 && delta_yPN > 0) ? gamma / delta_yPN * An : 0.0
                 
                 # Apply boundary conditions based on location
-                # (boundary condition logic will follow below)
                 
             else
                 # Internal node - normal calculation
@@ -249,7 +250,6 @@ function coeff_array!(nodes)
                 Sp = -(De - Fe)
                 Su = (De - Fe) * nodes[i,j][3]  # T=50 is already set
             
-            # NEUMANN CONDITION (insulated)
             # Left side boundaries (except A)
             elseif i == 1
                 aE = (i < n-1) ? max(-Fe, De - Fe/2, 0) : 0
@@ -311,7 +311,8 @@ function TDMA!(nodes)
     
     # Solve along j-direction (columns) for each row i
     for i = 1:n-1
-        # Skip if this is a boundary row where we shouldn't solve
+        # Skip if this is a boundary row as adjacent nodes details
+        # may be unavaiable
         if i == 1 || i == n-1
             continue
         end
@@ -370,8 +371,8 @@ function TDMA!(nodes)
     end
 end
 
-# TODO Gauss_Siedel donot converge and solution dont agree
-# check this one 
+# TODO Gauss_Siedel and TDMA should agree .
+# solution should converge with same value 
 
 function Gauss_Siedel!(nodes)
     # global variables
@@ -422,20 +423,48 @@ function error_test(nodes)
 
         # TODO update the error function 
         # TODO please ensure if the error calculation is correct
-        error += aW * TW + aS * TS+aE * TE + aN * TN - aP * TP
+        error += abs(aW * TW + aS * TS+aE * TE + aN * TN - aP * TP)
     end
     return error
 end
 
-# convergence test 
+# calculations
+error_tolerance = 0.0001
 counter = 0
 while true
     global counter
     println("error values : " , error_test(nodes))
-    if error_test(nodes) < 0.001
+    if error_test(nodes) < error_tolerance 
         break
     end
+    # Gauss_Siedel!(nodes)
     TDMA!(nodes)
     counter += 1
     @show counter 
 end
+
+
+# TODO for gauss_siedel , please remove the error tolerance
+# as it may take much longer to converge
+
+# for  convergence test 
+# error_trial = [10 1 0.1 0.001 0.0001 0.00001 0.000001]
+# counter_array = similar(error_trial)
+
+# for i =  1:length(error_trial) 
+#     counter = 0
+#     println("========")
+#     println("error testing with error : ",error_trial[i])
+#     while true
+#         println("error values : " , error_test(nodes))
+#         if error_test(nodes) < error_trial[i] 
+#             break
+#         end
+#         TDMA!(nodes)
+#         counter += 1
+#         @show counter 
+#         counter_array[i] = counter
+#     end
+# end
+
+# plot_error(error_trial, counter_array)

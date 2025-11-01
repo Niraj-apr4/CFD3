@@ -64,29 +64,6 @@ function plot_temp(data)
     display(c)
 end
 
-function plot_convergence(loops_array, tolerance_array)
-    plot(loops_array, tolerance_array,
-         xlabel="Iteration Number",
-         ylabel="Convergence Tolerance",
-         title="Convergence History(logarithmic plot)",
-         yscale=:log10,                    # Log scale for tolerance
-         color=:blue,
-         marker=:square,
-         grid=:true,
-         framestyle=:box,
-         markersize=5,
-         size=(800, 600),
-         fontfamily="Computer Modern",
-         titlefontsize=16,
-         guidefontsize=14,
-         tickfontsize=12,
-         legend=false)
-    
-    # annotation
-    hline!([tolerance_array[7]], linestyle=:dash, color=:green, label="Target")
-    vline!([loops_array[7]], linestyle=:dash, color=:green, label="Target")
-end
-
 function plot_velocity(nodes)
     
     # Extract x, y, u, v from nodes
@@ -103,4 +80,32 @@ function plot_velocity(nodes)
            xlabel="x", ylabel="y",
            legend=false)
     display(q)
+end
+
+# Plot with log scaling on x-axis (error tolerance)
+function plot_error(error_trial, counter_array)
+    error_vec = vec(error_trial)
+    counter_vec = vec(counter_array)
+    plt = plot(
+        error_vec, counter_vec;
+        xscale = :log10,
+        xlabel = "Error tolerance",
+        ylabel = "Number of iterations",
+        title = "Convergence",
+        legend = false,
+        lw = 2,
+        marker = :circle,
+        markersize = 6,
+        markercolor = :blue,
+        linecolor = :blue,
+        grid = :on,
+        framestyle = :box,
+        background_color = :white,
+        guidefont = font(12, "Computer Modern"),
+        tickfont = font(10, "Computer Modern"),
+        titlefont = font(14, "Computer Modern")
+    )
+
+    display(plt)
+    return plt
 end
