@@ -403,8 +403,15 @@ function Gauss_Siedel!(nodes)
     end
 end
 
+# TODO check if f is correct or not
+# f = (rho * U * H)_A * del_T
+# currently set to 1 
+
+U = 1 # TODO check
+f = rho * U * H * 30
+
 function error_test(nodes)
-    global coeff_array
+    global coeff_array , f
     # only implemented for internal nodes
     # for simplicity
     error = 0 # carefull with this   
@@ -423,48 +430,49 @@ function error_test(nodes)
 
         # TODO update the error function 
         # TODO please ensure if the error calculation is correct
-        error += abs(aW * TW + aS * TS+aE * TE + aN * TN - aP * TP)
+        error += (1/f) *  abs(aW * TW + aS * TS+aE * TE + aN * TN - aP * TP)
     end
     return error
 end
 
-# calculations
-error_tolerance = 0.0001
-counter = 0
-while true
-    global counter
-    println("error values : " , error_test(nodes))
-    if error_test(nodes) < error_tolerance 
-        break
-    end
-    # Gauss_Siedel!(nodes)
-    TDMA!(nodes)
-    counter += 1
-    @show counter 
-end
-
-
-# TODO for gauss_siedel , please remove the error tolerance
-# as it may take much longer to converge
-
-# for  convergence test 
-# error_trial = [10 1 0.1 0.001 0.0001 0.00001 0.000001]
-# counter_array = similar(error_trial)
-
-# for i =  1:length(error_trial) 
-#     counter = 0
-#     println("========")
-#     println("error testing with error : ",error_trial[i])
-#     while true
-#         println("error values : " , error_test(nodes))
-#         if error_test(nodes) < error_trial[i] 
-#             break
-#         end
-#         TDMA!(nodes)
-#         counter += 1
-#         @show counter 
-#         counter_array[i] = counter
+# # calculations
+# error_tolerance = 0.0001
+# counter = 0
+# while true
+#     global counter
+#     println("error values : " , error_test(nodes))
+#     if error_test(nodes) < error_tolerance 
+#         break
 #     end
+#     # Gauss_Siedel!(nodes)
+#     TDMA!(nodes)
+#     counter += 1
+#     @show counter 
 # end
 
-# plot_error(error_trial, counter_array)
+
+# TODO for gauss_siedel , please remove the error tolerance less
+# as it may take much longer to converge
+
+#convergence test 
+error_trial = [10 1 0.1 0.001 0.0001 0.00001 0.000001 0.0000001]
+counter_array = similar(error_trial)
+
+for i =  1:length(error_trial) 
+    counter = 0
+    println("========")
+    println("error testing with error : ",error_trial[i])
+    while true
+        println("error values : " , error_test(nodes))
+        if error_test(nodes) < error_trial[i] 
+            break
+        end
+        TDMA!(nodes)
+        # Gauss_Siedel!(nodes)
+        counter += 1
+        @show counter 
+        counter_array[i] = counter
+    end
+end
+
+plot_error(error_trial, counter_array)

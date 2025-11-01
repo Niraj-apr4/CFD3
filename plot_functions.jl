@@ -91,7 +91,9 @@ function plot_error(error_trial, counter_array)
         xscale = :log10,
         xlabel = "Error tolerance",
         ylabel = "Number of iterations",
-        title = "Convergence",
+        # TODO implement a variable way to change the title of
+        # plot
+        title = " TDMA Convergence Test",
         legend = false,
         lw = 2,
         marker = :circle,

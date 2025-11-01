@@ -1,0 +1,34 @@
+#+title: STEADY 2D Convection - Diffusion
+#+author: Niraj Kumar Singh , Roll No : AM25M807
+
+* STEADY  2D  - Convection  - Diffusion
+The two-dimensional transport equation for temperature reads
+\[\frac{\delta}{\delta x}(\rho U T) + \frac{\delta}{\delta y} (\rho V T)  = \frac{\delta}{\delta x} (\gamma \frac{\delta T}{\delta x}  ) + \frac{\delta}{\delta y} (\gamma \frac{\delta T}{\delta Y}) + S\]
+
+where
+\[ \gamma = \frac{\rho}{C_p} \]
+
+* Simulation result with error tolerance of  error < 0.0001
+[[./result.png]]
+
+* Sensitivity to Boundary Condition 
+At East Boundary , except at outlet Temperature is fixed  at 50 degree
+The Dirichlet conditon [T = 50 degree C]is applied at East Boundary except at the outlets which was previously set to [T = 20 degree C] 
+
+[[./result1.png]]
+
+* Sensitivity to Convergence
+
+** TDMA Convergence Test 
+ | tolerance Value | 10.0 | 1.0 |  0.1 | 0.001 | 0.0001 | 1.0e-5 | 1.0e-6 | 1.0e-7 |
+ | counter         |  nil | nil | 10.0 | 126.0 |  256.0 |  297.0 |  298.0 |  297.0 |
+[[./conv.png]]
+
+** Gauss-Siedel Convergence Test  
+
+ | tolerance Value | 10.0 | 1.0 | 0.1 | 0.001 | 0.0001 | 1.0e-5 | 1.0e-6 | 1.0e-7 |
+ | Counter         |  nil | nil |   4 |   133 |   1277 |  12865 |  17840 | 17840 |
+
+ [[./conv1.png]]
+
+ Comments : TDMA converges much faster for error tolerance 1e-7 297 iteration are performed for solution to converge , but for Gauss Siedel 17840 iteration are performed for same error tolerance   
